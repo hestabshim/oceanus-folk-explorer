@@ -1,20 +1,52 @@
----
-
-
----
+<!doctype html>
 <html lang="en">
-  <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Document</title>
-  </head>
-  <body>
-    <div id="menu-bar" class="bg-gray-600 h-20">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oceanus Folk — Graph Explorer</title>
+  <link rel="stylesheet" href={`${import.meta.env.BASE_URL}/styles.css`} />
+</head>
+<body>
+  <div class="explorer">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="Oceanus Folk graph explorer">
+        <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span><strong>OCEANUS</strong><small>FOLK GRAPH</small></span>
+      </a>
+      <nav class="view-switcher" aria-label="Graph views">
+        <button class="view-tab active" data-view="influence">Influence</button>
+        <button class="view-tab" data-view="careers">Careers</button>
+        <button class="view-tab" data-view="candidates">Candidates</button>
+      </nav>
+      <div class="top-actions"><span class="dataset-label">MC1 · 17,412 nodes · 37,857 edges</span><button class="button secondary" id="notesButton">Data notes</button><button class="button primary" id="exportButton">Export</button></div>
+    </header>
 
+    <div class="workspace">
+      <aside class="filters" aria-label="Graph filters">
+        <div class="panel-title"><div><span class="kicker">FILTERS</span><h2>Filters</h2></div><button class="clear-button" id="clearFilters">Clear</button></div>
+        <div class="filter-group" data-influence-only><span class="filter-label">Direction</span><div class="segmented" role="group" aria-label="Influence direction"><button class="segment active" data-direction="outbound">Outward</button><button class="segment" data-direction="inbound">Inward</button></div></div>
+        <div class="filter-group"><div class="filter-label-row"><span class="filter-label">Years</span><output id="yearOutput">2007 — 2040</output></div><div class="range-wrap"><input id="yearStart" type="range" min="2007" max="2040" value="2007" aria-label="Start year" /><input id="yearEnd" type="range" min="2007" max="2040" value="2040" aria-label="End year" /></div><div class="range-labels"><span>2007</span><span>2040</span></div></div>
+        <div class="filter-group" data-influence-only><span class="filter-label">Genres</span><div class="chip-list" id="genreFilters"></div></div>
+        <div class="filter-foot"><span class="status-dot"></span><div><strong>MC1 graph loaded</strong><small>Filters update the view.</small></div></div>
+      </aside>
+
+      <main class="stage">
+        <div class="stage-header"><div><span class="kicker" id="viewKicker">INFLUENCE / OCEANUS FOLK</span><h1 id="viewTitle">Influence by year</h1><p id="viewDescription">Filter by year, direction, or genre.</p></div><div class="stage-tools"><span id="selectionSummary">No selection</span><button class="icon-button" id="resetView" aria-label="Reset view">↺</button></div></div>
+        <div class="chart-shell"><div class="axis-title" id="axisTitle">REFERENCES &amp; INSPIRATIONS</div><div id="viz" class="viz" aria-live="polite"></div></div>
+        <div class="legend" id="legend"></div>
+        <div class="chart-hint">Click a mark to inspect it. Click a legend item to hide a series.</div>
+      </main>
+
+      <aside class="inspector" aria-label="Selection details">
+        <div class="inspector-header"><span class="kicker">INSPECTOR</span><span class="inspector-state" id="inspectorState">IDLE</span></div>
+        <div id="inspectorContent" class="inspector-content"><div class="empty-inspector"><span class="empty-mark">+</span><h2>Select a mark</h2><p>Select a year, line, or candidate to view details.</p></div></div>
+        <div class="inspector-bottom"><span class="status-dot"></span><span>Select a mark</span></div>
+      </aside>
     </div>
-      
-
-  
-  </body>
+  </div>
+  <div class="tooltip" id="tooltip" role="status"></div>
+  <div class="modal-backdrop" id="notesModal" hidden><div class="notes-modal" role="dialog" aria-modal="true" aria-labelledby="notesTitle"><button class="modal-close" id="closeNotes" aria-label="Close">×</button><span class="kicker">DATA NOTES</span><h2 id="notesTitle">About the graph</h2><p>MC1 is a synthetic directed multigraph with 17,412 nodes, 37,857 edges, and 12 relationship types.</p><button class="button secondary" id="closeNotesBottom">Close</button></div></div>
+  <script is:inline src={`${import.meta.env.BASE_URL}/dashboard-data.js`}></script>
+  <script is:inline src={`${import.meta.env.BASE_URL}/app.js`}></script>
+</body>
 </html>
-  

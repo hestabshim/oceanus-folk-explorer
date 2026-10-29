@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oceanus Folk — Annotate</title>
+  <link rel="stylesheet" href="annotate.css" />
+</head>
+<body>
+  <header class="topbar"><a href="./" class="brand"><span class="mark"><i></i><i></i><i></i></span><span><strong>OCEANUS</strong><small>ANNOTATOR</small></span></a><div class="actions"><button id="openFile">Open .md</button><button id="saveFile" class="primary">Save .md</button></div></header>
+  <main class="app">
+    <section class="source-panel panel"><div class="panel-head"><div><span class="kicker">SOURCE</span><h1>Annotate text</h1></div><span id="selectionState">No selection</span></div><label for="title">Document title</label><input id="title" value="Untitled notes" /><label for="source">Paste source text</label><textarea id="source" placeholder="Paste an article, transcript, or graph note here."></textarea><div class="source-actions"><button id="useSelection">Use selection</button><span>Select text above, then add a note.</span></div><label for="note">Annotation</label><textarea id="note" class="note-input" placeholder="What do you want to remember?"></textarea><button id="addAnnotation" class="add-button">Add annotation</button><div id="annotationList" class="annotation-list"><p class="empty">No annotations yet.</p></div></section>
+    <section class="markdown-panel panel"><div class="panel-head"><div><span class="kicker">MARKDOWN</span><h2>File contents</h2></div><span id="saveState">Unsaved</span></div><textarea id="markdown" spellcheck="false" aria-label="Markdown contents"></textarea><p class="hint">Save writes a local .md file. In browsers without file access, it downloads one.</p></section>
+  </main>
+  <script src="annotate.js"></script>
+</body>
+</html>

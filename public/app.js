@@ -7,6 +7,88 @@
   const tooltip = $('#tooltip');
   const colors = {sailor:'#df7065',cassian:'#e4a04e',claire:'#4c9fc7'};
   const careerNames = {sailor:'Sailor Shift',cassian:'Cassian Storm',claire:'Claire Holmes'};
+  const devMode = ['localhost','127.0.0.1'].includes(location.hostname) || new URLSearchParams(location.search).has('dev');
+  let feedbackPins = [];
+  let feedbackSelected = null;
+  let feedbackPlacing = false;
+
+  function feedbackKey() { return `oceanus-feedback:${location.pathname}:${state.view}`; }
+  function feedbackLoad() {
+    if (!devMode) return;
+    try { feedbackPins = JSON.parse(localStorage.getItem(feedbackKey()) || '[]'); } catch { feedbackPins = []; }
+    feedbackSelected = null;
+    feedbackRender();
+  }
+  function feedbackStore() { localStorage.setItem(feedbackKey(), JSON.stringify(feedbackPins)); }
+  function feedbackMarkdown() {
+    const page = `${location.pathname} · ${state.view}`;
+    const lines = [`# Page feedback`, '', `Page: ${page}`, '', '## Pins', ''];
+    if (!feedbackPins.length) lines.push('_No pins._');
+    feedbackPins.forEach((pin, index) => lines.push(`### ${index + 1}. ${pin.title || 'Untitled pin'}`, '', `- Position: ${pin.x.toFixed(1)}% from left, ${pin.y.toFixed(1)}% from top`, `- Feedback: ${pin.note || 'None'}`, ''));
+    return lines.join('\\n');
+  }
+  function feedbackRenderMarkers() {
+    const layer = $('#feedbackPins');
+    if (!layer) return;
+    layer.innerHTML = feedbackPins.map((pin, index) => `<button class="feedback-marker ${pin.id === feedbackSelected ? 'selected' : ''}" style="left:${pin.x}%;top:${pin.y}%" data-feedback-id="${pin.id}" aria-label="Feedback pin ${index + 1}"><span>${index + 1}</span></button>`).join('');
+    $$('.feedback-marker', layer).forEach(marker => marker.addEventListener('click', event => { event.stopPropagation(); feedbackSelect(Number(marker.dataset.feedbackId)); }));
+  }
+  function feedbackRenderList() {
+    const list = $('#feedbackList');
+    if (!list) return;
+    list.innerHTML = feedbackPins.length ? feedbackPins.map((pin, index) => `<button class="feedback-row ${pin.id === feedbackSelected ? 'selected' : ''}" data-feedback-id="${pin.id}"><span class="feedback-row-number">${index + 1}</span><span><strong>${esc(pin.title || 'Untitled pin')}</strong><small>${esc(pin.note || 'No feedback yet')}</small></span></button>`).join('') : '<p class="feedback-empty">No pins on this view.</p>';
+    $$('.feedback-row', list).forEach(row => row.addEventListener('click', () => feedbackSelect(Number(row.dataset.feedbackId))));
+  }
+  function feedbackRenderEditor() {
+    const pin = feedbackPins.find(item => item.id === feedbackSelected);
+    $('#feedbackEditor').hidden = !pin;
+    $('#feedbackPinLabel').textContent = pin ? `Pin ${feedbackPins.indexOf(pin) + 1}` : 'Select a pin';
+    if (pin) { $('#feedbackTitle').value = pin.title || ''; $('#feedbackNote').value = pin.note || ''; }
+  }
+  function feedbackRender() {
+    if (!devMode) return;
+    feedbackRenderMarkers();
+    feedbackRenderList();
+    feedbackRenderEditor();
+  }
+  function feedbackSelect(id) { feedbackSelected = id; feedbackRender(); $('#feedbackOverlay').hidden = false; }
+  function feedbackStartPlacing() { feedbackPlacing = true; $('#feedbackOverlay').hidden = true; $('#feedbackCapture').hidden = false; document.body.classList.add('placing-feedback'); }
+  function feedbackCancelPlacing() { feedbackPlacing = false; $('#feedbackCapture').hidden = true; document.body.classList.remove('placing-feedback'); }
+  function feedbackCaptureClick(event) {
+    if (!feedbackPlacing || event.target.closest('#feedbackOverlay') || event.target.closest('#feedbackLauncher')) return;
+    event.preventDefault(); event.stopPropagation();
+    const width = Math.max(document.documentElement.scrollWidth, window.innerWidth);
+    const height = Math.max(document.documentElement.scrollHeight, window.innerHeight);
+    feedbackPins.push({id:Date.now(), x:event.pageX / width * 100, y:event.pageY / height * 100, title:'', note:''});
+    feedbackSelected = feedbackPins.at(-1).id;
+    feedbackCancelPlacing(); feedbackStore(); feedbackRender(); $('#feedbackOverlay').hidden = false; $('#feedbackNote').focus();
+  }
+  async function feedbackSaveFile() {
+    const contents = feedbackMarkdown();
+    try {
+      if (window.showSaveFilePicker) {
+        const handle = await window.showSaveFilePicker({suggestedName:`${location.hostname}-feedback.md`,types:[{description:'Markdown',accept:{'text/markdown':['.md']}}]});
+        const writable = await handle.createWritable(); await writable.write(contents); await writable.close();
+      } else {
+        const link = document.createElement('a'); link.href = URL.createObjectURL(new Blob([contents], {type:'text/markdown'})); link.download = 'page-feedback.md'; link.click(); URL.revokeObjectURL(link.href);
+      }
+    } catch (error) { if (error.name !== 'AbortError') alert('Could not save feedback.'); }
+  }
+  function feedbackInit() {
+    if (!devMode) return;
+    $('#feedbackLauncher').hidden = false;
+    $('#feedbackLauncher').addEventListener('click', () => { feedbackLoad(); $('#feedbackOverlay').hidden = false; });
+    $('#closeFeedback').addEventListener('click', () => { $('#feedbackOverlay').hidden = true; });
+    $('#addFeedback').addEventListener('click', feedbackStartPlacing);
+    $('#saveFeedback').addEventListener('click', feedbackSaveFile);
+    $('#doneFeedback').addEventListener('click', () => { feedbackSelected = null; feedbackRender(); });
+    $('#deleteFeedback').addEventListener('click', () => { feedbackPins = feedbackPins.filter(pin => pin.id !== feedbackSelected); feedbackSelected = null; feedbackStore(); feedbackRender(); });
+    $('#feedbackTitle').addEventListener('input', event => { const pin=feedbackPins.find(item=>item.id===feedbackSelected); if(pin){pin.title=event.target.value;feedbackStore();feedbackRenderList();} });
+    $('#feedbackNote').addEventListener('input', event => { const pin=feedbackPins.find(item=>item.id===feedbackSelected); if(pin){pin.note=event.target.value;feedbackStore();feedbackRenderList();} });
+    document.addEventListener('click', feedbackCaptureClick, true);
+    document.addEventListener('keydown', event => { if(event.key==='Escape') feedbackCancelPlacing(); });
+    feedbackLoad();
+  }
 
   function showTooltip(html, event) {
     tooltip.innerHTML = html;
@@ -89,7 +171,7 @@
   function inspectLine(set){$('#selectionSummary').textContent=set.name;$('#inspectorState').textContent='ARTIST';$('#inspectorContent').innerHTML=`<span class="selection-kicker">SELECTED ARTIST</span><h2 class="selection-title">${esc(set.name)}</h2><p class="selection-meta">${esc(set.meta)}</p><div class="detail-stat"><span>GRAPH SIGNAL</span><strong>${esc(set.detail)}</strong></div><div class="evidence-list"><h3>READING</h3><div><i>●</i><span>Compare slope, output, and first release.</span></div></div>`}
   function inspectCandidate(candidate){$('#selectionSummary').textContent=candidate.name;$('#inspectorState').textContent='CANDIDATE';$('#inspectorContent').innerHTML=`<span class="selection-kicker">FUTURE SIGNAL</span><h2 class="selection-title">${esc(candidate.name)}</h2><p class="selection-meta">${esc(candidate.meta)}</p><div class="detail-stat"><span>SIGNAL SCORE</span><strong>${candidate.score} / 5</strong></div><div class="evidence-list"><h3>DETAIL</h3><div><i>●</i><span>${esc(candidate.detail)}</span></div></div>`}
 
-  function setView(view){state.view=view;$$('.view-tab').forEach(tab=>tab.classList.toggle('active',tab.dataset.view===view));const config={influence:['INFLUENCE / OCEANUS FOLK','Influence by year','Filter by year, direction, or genre.'],careers:['CAREERS / COMPARISON','Career output','Compare cumulative songs by artist.'],candidates:['CANDIDATES / 2041—45','Candidate trajectories','Compare output from 2030 to 2040.']}[view];$('#viewKicker').textContent=config[0];$('#viewTitle').textContent=config[1];$('#viewDescription').textContent=config[2];$$('[data-influence-only]').forEach(group=>group.hidden=view!=='influence');render();}
+  function setView(view){state.view=view;$$('.view-tab').forEach(tab=>tab.classList.toggle('active',tab.dataset.view===view));const config={influence:['INFLUENCE / OCEANUS FOLK','Influence by year','Filter by year, direction, or genre.'],careers:['CAREERS / COMPARISON','Career output','Compare cumulative songs by artist.'],candidates:['CANDIDATES / 2041—45','Candidate trajectories','Compare output from 2030 to 2040.']}[view];$('#viewKicker').textContent=config[0];$('#viewTitle').textContent=config[1];$('#viewDescription').textContent=config[2];$$('[data-influence-only]').forEach(group=>group.hidden=view!=='influence');render();if(devMode)feedbackLoad();}
   function render(){if(state.view==='influence')renderInfluence();else renderLines(state.view)}
   function updateYears(){let start=Number($('#yearStart').value),end=Number($('#yearEnd').value);if(start>end){[start,end]=[end,start];$('#yearStart').value=start;$('#yearEnd').value=end}state.start=start;state.end=end;$('#yearOutput').value=`${start} — ${end}`;render()}
   function reset(){state.direction='outbound';state.start=2007;state.end=2040;state.genres=new Set(data.trend.series.map(item=>item.name));$('#yearStart').value=2007;$('#yearEnd').value=2040;$$('.segment').forEach(item=>item.classList.toggle('active',item.dataset.direction==='outbound'));renderGenreFilters();updateYears();$('#selectionSummary').textContent='No selection';$('#inspectorState').textContent='IDLE';$('#inspectorContent').innerHTML='<div class="empty-inspector"><span class="empty-mark">+</span><h2>Select a mark</h2><p>Select a year, line, or candidate to view details.</p></div>'}
@@ -99,5 +181,5 @@
   $('#yearStart').addEventListener('input',updateYears);$('#yearEnd').addEventListener('input',updateYears);$('#clearFilters').addEventListener('click',reset);$('#resetView').addEventListener('click',reset);
   const modal=$('#notesModal');const closeModal=()=>modal.hidden=true;$('#notesButton').addEventListener('click',()=>modal.hidden=false);$('#closeNotes').addEventListener('click',closeModal);$('#closeNotesBottom').addEventListener('click',closeModal);modal.addEventListener('click',event=>{if(event.target===modal)closeModal()});
   $('#exportButton').addEventListener('click',()=>{const blob=new Blob([`Oceanus Folk — ${state.view}\nFilters: ${state.start}—${state.end}, ${state.direction}\nSource: VAST Challenge 2025 MC1 synthetic knowledge graph.`],{type:'text/plain'});const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download='oceanus-folk-exploration.txt';link.click();URL.revokeObjectURL(url)});
-  renderGenreFilters();setView('influence');
+  feedbackInit();renderGenreFilters();setView('influence');
 })();

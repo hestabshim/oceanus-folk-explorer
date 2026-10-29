@@ -18,7 +18,7 @@
         <button class="view-tab" data-view="careers">Careers</button>
         <button class="view-tab" data-view="candidates">Candidates</button>
       </nav>
-      <div class="top-actions"><span class="dataset-label">MC1 · 17,412 nodes · 37,857 edges</span><button class="button secondary" id="notesButton">Data notes</button><a class="button secondary" href={`${import.meta.env.BASE_URL}/annotate.html`}>Annotate</a><button class="button primary" id="exportButton">Export</button></div>
+      <div class="top-actions"><span class="dataset-label">MC1 · 17,412 nodes · 37,857 edges</span><button class="button secondary" id="notesButton">Data notes</button><button class="button primary" id="exportButton">Export</button></div>
     </header>
 
     <div class="workspace">
@@ -44,6 +44,17 @@
       </aside>
     </div>
   </div>
+  <button id="feedbackLauncher" class="feedback-launcher" hidden aria-label="Open design feedback">✦</button>
+  <div id="feedbackPins" class="feedback-pins" aria-hidden="true"></div>
+  <aside id="feedbackOverlay" class="feedback-overlay" hidden aria-label="Design feedback panel">
+    <div class="feedback-overlay-head"><div><span class="kicker">DEV MODE</span><h2>Page feedback</h2></div><button id="closeFeedback" class="feedback-close" aria-label="Close feedback">×</button></div>
+    <p class="feedback-help">Pin a spot on this page, then leave a note.</p>
+    <button id="addFeedback" class="feedback-add">＋ Add pin</button>
+    <div id="feedbackEditor" class="feedback-editor" hidden><span id="feedbackPinLabel" class="feedback-pin-label">Pin 1</span><input id="feedbackTitle" placeholder="Short label" /><textarea id="feedbackNote" placeholder="What should change here?"></textarea><div class="feedback-editor-actions"><button id="deleteFeedback" class="feedback-delete">Delete</button><button id="doneFeedback" class="feedback-done">Done</button></div></div>
+    <div id="feedbackList" class="feedback-list"><p class="feedback-empty">No pins on this view.</p></div>
+    <button id="saveFeedback" class="feedback-save">Save pins as Markdown</button>
+  </aside>
+  <div class="feedback-capture" id="feedbackCapture" hidden>Click anywhere on the page to place a pin. Press Escape to cancel.</div>
   <div class="tooltip" id="tooltip" role="status"></div>
   <div class="modal-backdrop" id="notesModal" hidden><div class="notes-modal" role="dialog" aria-modal="true" aria-labelledby="notesTitle"><button class="modal-close" id="closeNotes" aria-label="Close">×</button><span class="kicker">DATA NOTES</span><h2 id="notesTitle">About the graph</h2><p>MC1 is a synthetic directed multigraph with 17,412 nodes, 37,857 edges, and 12 relationship types.</p><button class="button secondary" id="closeNotesBottom">Close</button></div></div>
   <script is:inline src={`${import.meta.env.BASE_URL}/dashboard-data.js`}></script>

@@ -3,14 +3,30 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Oceanus Folk — Annotate</title>
+  <title>Oceanus Folk — Design annotations</title>
   <link rel="stylesheet" href="annotate.css" />
 </head>
 <body>
-  <header class="topbar"><a href="./" class="brand"><span class="mark"><i></i><i></i><i></i></span><span><strong>OCEANUS</strong><small>ANNOTATOR</small></span></a><div class="actions"><button id="openFile">Open .md</button><button id="saveFile" class="primary">Save .md</button></div></header>
-  <main class="app">
-    <section class="source-panel panel"><div class="panel-head"><div><span class="kicker">SOURCE</span><h1>Annotate text</h1></div><span id="selectionState">No selection</span></div><label for="title">Document title</label><input id="title" value="Untitled notes" /><label for="source">Paste source text</label><textarea id="source" placeholder="Paste an article, transcript, or graph note here."></textarea><div class="source-actions"><button id="useSelection">Use selection</button><span>Select text above, then add a note.</span></div><label for="note">Annotation</label><textarea id="note" class="note-input" placeholder="What do you want to remember?"></textarea><button id="addAnnotation" class="add-button">Add annotation</button><div id="annotationList" class="annotation-list"><p class="empty">No annotations yet.</p></div></section>
-    <section class="markdown-panel panel"><div class="panel-head"><div><span class="kicker">MARKDOWN</span><h2>File contents</h2></div><span id="saveState">Unsaved</span></div><textarea id="markdown" spellcheck="false" aria-label="Markdown contents"></textarea><p class="hint">Save writes a local .md file. In browsers without file access, it downloads one.</p></section>
+  <header class="topbar">
+    <a href="./" class="brand"><span class="mark"><i></i><i></i><i></i></span><span><strong>OCEANUS</strong><small>DESIGN NOTES</small></span></a>
+    <div class="actions"><label class="file-button">Open image<input id="imageFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" /></label><button id="saveFile" class="primary">Save .md</button></div>
+  </header>
+  <main class="annotator">
+    <section class="canvas-panel panel">
+      <div class="panel-head"><div><span class="kicker">DESIGN</span><h1>Pin feedback</h1></div><span id="pinCount">0 pins</span></div>
+      <div id="dropZone" class="drop-zone"><div class="drop-icon">+</div><h2>Open a design image</h2><p>Choose a PNG, JPG, or WebP. Then click anywhere to place a pin.</p><label class="choose-button">Choose image<input id="emptyImageFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" /></label></div>
+      <div id="imageStage" class="image-stage" hidden><div id="imageCanvas" class="image-canvas"><img id="designImage" alt="Design to annotate" /><div id="pins"></div></div></div>
+      <p class="canvas-hint">Click the image to add a pin. Click a pin to edit it.</p>
+    </section>
+    <aside class="notes-panel panel">
+      <div class="panel-head"><div><span class="kicker">FEEDBACK</span><h2 id="selectedLabel">Select a pin</h2></div><span id="saveState">Unsaved</span></div>
+      <label for="title">File title</label><input id="title" value="Design feedback" />
+      <div id="pinEditor" class="pin-editor" hidden><label for="pinLabel">Label</label><input id="pinLabel" placeholder="e.g. Header spacing" /><label for="pinNote">Feedback</label><textarea id="pinNote" placeholder="What should change here?"></textarea><div class="editor-actions"><button id="deletePin" class="delete-button">Delete pin</button><button id="donePin" class="save-button">Done</button></div></div>
+      <div class="pin-list-head"><span class="kicker">PINS</span><span id="emptyHint">None yet</span></div>
+      <div id="pinList" class="pin-list"><p class="empty">Add a pin to start.</p></div>
+      <label class="markdown-label" for="markdown">Markdown</label><textarea id="markdown" class="markdown" spellcheck="false" aria-label="Markdown feedback"></textarea>
+      <p class="hint">Save writes a Markdown file. The image stays on your computer; the file stores its name and pin positions.</p>
+    </aside>
   </main>
   <script src="annotate.js"></script>
 </body>

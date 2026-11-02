@@ -1,0 +1,3 @@
+# Page feedback\n\nPage: /oceanus-folk-explorer/ · careers\n\n## Pins\n\n### 1. graph change\n\n- Position: 49.9% from left, 48.4% from top\n- Feedback: for this view specifically want a search bar and a list of all the artists like this Implement this design from Figma.
+@https://www.figma.com/design/n7GrJnTA8GD2JNfYlvIAnT/470-dashboard?node-id=1-2&m=dev same for candidates page which lets people compare by artist
+Tthis should be an ego network for each artist that gets selected, with the artist at the center and you can see different influences spreading outward from the specific artist selected\n

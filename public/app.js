@@ -268,7 +268,7 @@
     });
     let context = 0;
     if (state.layers.has('context')) direct.forEach(node => {
-      const around = [...linksOf(node.a)].filter(([b]) => !nodes.has(b) && !related.has(b)).sort((p, q) => q[1] - p[1] || artists[q[0]].s - artists[p[0]].s).slice(0, 2);
+      const around = [...linksOf(node.a)].filter(([b]) => !nodes.has(b) && !related.has(b) && (!state.folkOnly || isFolk[b])).sort((p, q) => q[1] - p[1] || artists[q[0]].s - artists[p[0]].s).slice(0, 2);
       around.forEach(([b, n], i) => {
         if (context >= 30) return;
         const dx = node.x - cx, dy = node.y - cy, d = Math.hypot(dx, dy) || 1;
@@ -316,6 +316,8 @@
     list.forEach(node => { node.x = ox + (node.x - x0) * sx; node.y = oy + (node.y - y0) * sy; });
     return {nodes, edges, context, W, H};
   }
+  function star(x, y, r) { return Array.from({length:10}, (_, i) => { const a = (i * 36 - 90) * Math.PI / 180, d = i % 2 ? r * .8 : r * 1.65; return `${i ? 'L' : 'M'}${(x + Math.cos(a) * d).toFixed(1)} ${(y + Math.sin(a) * d).toFixed(1)}`; }).join('') + 'Z'; }
+  function nodeMark(index, x, y, r, fill, attrs = '') { return isFolk[index] ? `<path class="mark star" d="${star(x, y, r)}" fill="${fill}"${attrs}/>` : `<circle class="mark" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r.toFixed(1)}" fill="${fill}"${attrs}/>`; }
   function syncArtistSearch() {
     if (document.activeElement !== $('#artistSearch')) $('#artistSearch').value = state.center === null ? '' : artists[state.center].n;
     $('#clearArtist').hidden = state.center === null;
@@ -333,8 +335,9 @@
       inspector('IDLE', '<div class="empty-inspector"><span class="empty-mark">+</span><h2>No artist selected</h2><p>Their profile will appear here.</p></div>');
       return;
     }
-    const groups = egoGroups(center), limit = 12, {nodes, edges, context, W, H} = egoNetwork(center, groups, limit);
-    const name = artists[center].n, hub = nodes.get(center), radius = index => 4 + artists[index].s / 100 * 8;
+    const all = egoGroups(center), groups = Object.fromEntries(Object.entries(all).map(([key, list]) => [key, state.folkOnly ? list.filter(item => isFolk[item.a]) : list]));
+    const limit = 12, {nodes, edges, context, W, H} = egoNetwork(center, groups, limit);
+    const name = artists[center].n, hub = nodes.get(center), radius = node => 5 + Math.min(Math.sqrt(node.n || 1), 4) * 2.5;
     const point = node => `${node.x.toFixed(1)} ${node.y.toFixed(1)}`;
     const nodeTip = (item, key) => `<strong>${esc(artists[item.a].n)}</strong><br>${relations[key].label}${key === 'collab' ? ` · ${item.n} shared credits` : key === 'context' ? '' : ` · ${typeSummary(item.types) || `${item.n} references`}`}${item.first ? `<br>First reference ${item.first}` : ''}${item.from ? `<br>Via ${esc(artists[item.from.a].n)}` : ''}<br>Notoriety ${artists[item.a].s}${isFolk[item.a] ? ' · Oceanus Folk' : ''}`;
     const edgeSvg = edges.sort((p, q) => !!q.faded - !!p.faded).map(edge => {
@@ -343,16 +346,16 @@
       return `<path class="net-edge ${edge.faded ? 'faded' : ''} ${edge.key === 'indirect' ? 'indirect' : ''}" d="M${point(p)} Q${mx.toFixed(1)} ${my.toFixed(1)} ${point(q)}" stroke="${relations[edge.key].color}" stroke-width="${(1 + Math.min(edge.n, 6) * .4).toFixed(1)}"/>`;
     }).join('');
     const nodeSvg = [...nodes.values()].filter(node => node.key !== 'center').sort((p, q) => !!q.faded - !!p.faded).map(node => {
-      const r = radius(node.a) * (node.faded ? .8 : 1), right = node.x >= hub.x;
-      const label = text(node.x + (right ? 1 : -1) * (r + 5), node.y + 3.5, short(artists[node.a].n), `text-anchor="${right ? 'start' : 'end'}" class="net-label"`);
+      const r = radius(node) * (node.faded ? .8 : 1), right = node.x >= hub.x;
+      const label = text(node.x + (right ? 1 : -1) * (r * (isFolk[node.a] ? 1.65 : 1) + 5), node.y + 3.5, short(artists[node.a].n), `text-anchor="${right ? 'start' : 'end'}" class="net-label"`);
       const ring = node.key === 'indirect' ? ` style="stroke:${relations.indirect.color}"` : '';
-      return `<g class="net-node ${node.faded ? 'faded' : ''}" ${tip(nodeTip(node, node.key))} ${act(() => inspectRelation(node, node.key))} data-center="${node.a}"><circle cx="${node.x.toFixed(1)}" cy="${node.y.toFixed(1)}" r="${r.toFixed(1)}" fill="${node.key === 'indirect' ? '#fff' : relations[node.key].color}" class="${isFolk[node.a] ? 'folk' : ''}"${ring}/>${label}</g>`;
+      return `<g class="net-node ${node.faded ? 'faded' : ''}" ${tip(nodeTip(node, node.key))} ${act(() => inspectRelation(node, node.key))} data-center="${node.a}">${nodeMark(node.a, node.x, node.y, r, node.key === 'indirect' ? '#fff' : relations[node.key].color, ring)}${label}</g>`;
     }).join('');
-    const hubSvg = `<g class="net-node" ${tip(`<strong>${esc(name)}</strong><br>Notoriety ${artists[center].s}`)} ${act(() => inspector('ARTIST', profileHtml(center)))}><circle cx="${hub.x}" cy="${hub.y}" r="20" fill="#13212a" class="${isFolk[center] ? 'folk-hub' : ''}"/>${text(hub.x, hub.y + 38, name, 'text-anchor="middle" class="net-center-label"')}</g>`;
+    const hubSvg = `<g class="net-node" ${tip(`<strong>${esc(name)}</strong><br>Notoriety ${artists[center].s}`)} ${act(() => inspector('ARTIST', profileHtml(center)))}>${nodeMark(center, hub.x, hub.y, 20, '#13212a')}${text(hub.x, hub.y + 38, name, 'text-anchor="middle" class="net-center-label"')}</g>`;
     $('#viewDescription').textContent = `Click an artist for the evidence behind their link to ${name}. Double-click to put them at the centre.`;
     $('#viz').innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Influence network for ${esc(name)}">${edgeSvg}${nodeSvg}${hubSvg}</svg>`;
     const counts = {by:groups.by.length, collab:groups.collab.length, out:groups.out.length, indirect:groups.indirect.length, context};
-    $('#legend').innerHTML = `<h3 class="legend-title">Connections</h3>${Object.entries(relations).map(([key, relation]) => `<button class="legend-button ${state.layers.has(key) ? '' : 'off'}" data-layer="${key}" aria-pressed="${state.layers.has(key)}"><i class="legend-dot ${key === 'indirect' ? 'hollow' : ''} ${key === 'indirect' || key === 'context' ? 'faded' : ''}" style="--c:${relation.color}"></i>${relation.label}<b class="legend-count">${key === 'context' && !state.layers.has(key) ? '' : counts[key]}</b></button>`).join('')}<span class="legend-button static"><i class="legend-dot folk-key"></i>Oceanus Folk artist</span><p class="legend-note">Faded artists aren't linked to ${esc(short(name, 24))} directly. Size shows notoriety. Up to ${limit} per group.</p>`;
+    $('#legend').innerHTML = `<h3 class="legend-title">Connections</h3>${Object.entries(relations).map(([key, relation]) => `<button class="legend-button ${state.layers.has(key) ? '' : 'off'}" data-layer="${key}" aria-pressed="${state.layers.has(key)}"><i class="legend-dot ${key === 'indirect' ? 'hollow' : ''} ${key === 'indirect' || key === 'context' ? 'faded' : ''}" style="--c:${relation.color}"></i>${relation.label}<b class="legend-count">${key === 'context' && !state.layers.has(key) ? '' : counts[key]}</b></button>`).join('')}<span class="legend-button static"><svg class="legend-star" width="12" height="12" viewBox="-7 -7 14 14" aria-hidden="true"><path d="${star(0, 0.6, 4.4)}"/></svg>Oceanus Folk artist</span><p class="legend-note">Faded artists aren't linked to ${esc(short(name, 24))} directly. Size shows how strong the link is: works made together, or songs that reference each other. Up to ${limit} per group.</p>`;
     $$('[data-layer]').forEach(button => button.addEventListener('click', () => { const key = button.dataset.layer; state.layers.has(key) ? state.layers.delete(key) : state.layers.add(key); render(); }));
     inspector('ARTIST', profileHtml(center));
   }
@@ -480,7 +483,7 @@
   $('#clearFilters').addEventListener('click', reset);
   $$('[data-pool]').forEach(segment => segment.addEventListener('click', () => { state.pool = segment.dataset.pool; setSegment('pool', state.pool); }));
   $('#poolSort').addEventListener('change', event => { state.poolSort = event.target.value; });
-  $('#folkOnly').addEventListener('change', event => { state.folkOnly = event.target.checked; });
+  $('#folkOnly').addEventListener('change', event => { state.folkOnly = event.target.checked; render(); });
   combobox($('#artistSearchBox'), () => state.center, query => findArtists(query, {folkOnly:state.folkOnly}), setCenter);
   $('#clearArtist').addEventListener('click', () => setCenter(null));
   $('#artistSearch').placeholder = `Search ${artists.length.toLocaleString()} artists`;

@@ -49,7 +49,16 @@ for (const [work, people] of credited) {
   const everyone = [...new Set([...people, ...(producers.get(work) || [])])];
   everyone.forEach((a, index) => everyone.slice(index + 1).forEach(b => collaborate(a, b)));
 }
-for (const edge of graph.links) if (edge['Edge Type'] === 'MemberOf') collaborate(edge.source, edge.target);
+const groupsOf = new Map();
+for (const edge of graph.links) if (edge['Edge Type'] === 'MemberOf') {
+  collaborate(edge.source, edge.target);
+  if (artistIndex.has(edge.source) && artistIndex.has(edge.target)) {
+    if (!groupsOf.has(edge.source)) groupsOf.set(edge.source, []);
+    groupsOf.get(edge.source).push(artistIndex.get(edge.target));
+  }
+}
+const producedBy = new Map();
+for (const [work, people] of producers) people.forEach(id => { if (!producedBy.has(id)) producedBy.set(id, []); producedBy.get(id).push(work); });
 
 // Artist-level influence: when A's work (or A) references B's work (or B), B influenced A.
 // Stored inward only; the page derives the outward direction.
@@ -69,8 +78,10 @@ for (const edge of graph.links) {
   for (const a of ownersOf(from)) for (const b of ownersOf(to)) {
     if (a === b) continue;
     const map = inward[artistIndex.get(a)], key = artistIndex.get(b);
-    if (!map.has(key)) map.set(key, {types:[0, 0, 0, 0, 0], first:Infinity});
+    if (!map.has(key)) map.set(key, {types:[0, 0, 0, 0, 0], first:Infinity, refs:[]});
     map.get(key).types[type] += 1;
+    // The songs behind the link; -1 when the reference is to or from the artist rather than a work
+    map.get(key).refs.push(type, isWork(from) ? workRef(from) : -1, isWork(to) ? workRef(to) : -1);
     if (year(from)) map.get(key).first = Math.min(map.get(key).first, year(from));
   }
   if (!isWork(from) || !isWork(to) || !year(from) || from.genre === to.genre) continue;
@@ -98,11 +109,16 @@ const artists = artistIds.map((id, index) => {
     n:node.name,
     s:notoriety(stats[index]),
     k:[stats[index].works, stats[index].notable, stats[index].influenced],
-    w:works.map(work => [year(work) || 0, genreIndex.get(work.genre) ?? -1, work.notable ? 1 : 0]).sort((a, b) => a[0] - b[0])
+    w:works.map(work => [year(work) || 0, genreIndex.get(work.genre) ?? -1, work.notable ? 1 : 0, workRef(work)]).sort((a, b) => a[0] - b[0])
   };
   if (node['Node Type'] === 'MusicalGroup') artist.g = 1;
   if (notableYears.length) artist.f = Math.min(...notableYears);
-  if (inward[index].size) artist.i = [...inward[index]].map(([b, entry]) => [b, entry.first === Infinity ? 0 : entry.first, ...entry.types]);
+  if (inward[index].size) {
+    artist.i = [...inward[index]].map(([b, entry]) => [b, entry.first === Infinity ? 0 : entry.first, ...entry.types]);
+    artist.e = [...inward[index].values()].map(entry => entry.refs);
+  }
+  if (producedBy.has(id)) artist.p = producedBy.get(id).map(work => workRef(nodes.get(work)));
+  if (groupsOf.has(id)) artist.m = groupsOf.get(id);
   if (collaborators[index].size) artist.c = [...collaborators[index]].flat();
   return artist;
 });

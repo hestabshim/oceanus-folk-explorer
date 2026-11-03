@@ -1,3 +1,6 @@
+---
+import MesurerOverlay from '../components/MesurerOverlay';
+---
 <!doctype html>
 <html lang="en">
 <head>
@@ -7,7 +10,7 @@
   <link rel="stylesheet" href={`${import.meta.env.BASE_URL}/styles.css`} />
 </head>
 <body>
-  <div class="explorer">
+  <div class="explorer" data-view="influence">
     <header class="topbar">
       <a class="brand" href="#" aria-label="Oceanus Folk graph explorer">
         <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
@@ -22,43 +25,37 @@
     </header>
 
     <div class="workspace">
-      <aside class="filters" aria-label="Graph filters">
-        <div class="panel-title"><div><span class="kicker">FILTERS</span><h2>Filters</h2></div><button class="clear-button" id="clearFilters">Clear</button></div>
-        <div class="filter-group" data-views="influence"><span class="filter-label">Direction</span><div class="segmented" role="group" aria-label="Influence direction"><button class="segment active" data-direction="outbound">Outward</button><button class="segment" data-direction="inbound">Inward</button></div><p class="filter-help">Outward: other genres referencing Oceanus Folk. Inward: Oceanus Folk referencing other genres.</p></div>
-        <div class="filter-group" data-views="candidates"><label class="filter-label" for="compareMetric">Compare by</label><select id="compareMetric"><option value="releases">Releases</option><option value="notable">Notable releases</option><option value="folk">Oceanus Folk releases</option><option value="influenced">Artists they influenced</option><option value="influences">Artists who influenced them</option><option value="notoriety">Notoriety</option></select><div class="segmented compare-mode" role="group" aria-label="Count mode"><button class="segment active" data-cumulative="true">Cumulative</button><button class="segment" data-cumulative="false">Per year</button></div></div>
-        <div class="filter-group" data-views="influence candidates"><div class="filter-label-row"><span class="filter-label">Years</span><output id="yearOutput"></output></div><div class="range-wrap"><input id="yearStart" type="range" aria-label="Start year" /><input id="yearEnd" type="range" aria-label="End year" /></div><div class="range-labels"><span id="yearMin"></span><span id="yearMax"></span></div></div>
-        <div class="filter-group" data-views="influence careers"><span class="filter-label">Relationship types</span><div class="chip-list" id="typeFilters"></div></div>
-        <div class="filter-group artist-picker" data-views="careers"><label class="filter-label" for="artistSearch">Artists</label><input id="artistSearch" class="search-input" type="search" autocomplete="off" /><div class="picker-options"><label class="check-row"><input type="checkbox" id="folkOnly" /> Oceanus Folk only</label><select id="artistSort" aria-label="Sort artists"><option value="notoriety">By notoriety</option><option value="recent">By releases 2036–40</option><option value="name">A–Z</option></select></div><p class="list-note" id="compareNote"></p><div class="artist-list" id="artistList"></div></div>
-      </aside>
-
       <main class="stage">
-        <div class="stage-header"><div><span class="kicker" id="viewKicker">INFLUENCE / OCEANUS FOLK</span><h1 id="viewTitle">Influence by year</h1><p id="viewDescription"></p></div></div>
+        <div class="stage-header">
+          <h1 id="viewTitle" data-views="influence candidates">Influence by year</h1>
+          <div class="artist-search" id="artistSearchBox" data-views="careers"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><input id="artistSearch" type="text" role="combobox" aria-expanded="false" aria-autocomplete="list" aria-controls="artistSearchMenu" aria-label="Search artists" autocomplete="off" /><button class="slot-clear" id="clearArtist" aria-label="Clear artist" hidden>×</button><div class="slot-menu" id="artistSearchMenu" role="listbox" hidden></div></div>
+          <p id="viewDescription"></p>
+        </div>
+        <div class="toolbar" aria-label="Filters">
+          <div class="filter-group" data-views="influence"><span class="filter-label">Direction</span><div class="segmented" role="group" aria-label="Influence direction"><button class="segment active" data-direction="outbound" title="Other genres referencing Oceanus Folk">Outward</button><button class="segment" data-direction="inbound" title="Oceanus Folk referencing other genres">Inward</button></div></div>
+          <div class="filter-group" data-views="candidates"><label class="filter-label" for="compareMetric">Compare by</label><select id="compareMetric"><option value="releases">Releases</option><option value="notable">Notable releases</option><option value="folk">Oceanus Folk releases</option><option value="influenced">Artists they influenced</option><option value="influences">Artists who influenced them</option><option value="notoriety">Notoriety</option></select></div>
+          <div class="filter-group" data-views="candidates"><span class="filter-label">Count</span><div class="segmented" role="group" aria-label="Count mode"><button class="segment active" data-cumulative="true">Cumulative</button><button class="segment" data-cumulative="false">Per year</button></div></div>
+          <div class="filter-group years" data-views="influence candidates"><div class="filter-label-row"><span class="filter-label">Years</span><output id="yearOutput"></output></div><div class="range-wrap"><span class="range-fill" id="yearFill"></span><input id="yearStart" type="range" aria-label="Start year" /><input id="yearEnd" type="range" aria-label="End year" /></div><div class="range-labels"><span id="yearMin"></span><span id="yearMax"></span></div></div>
+          <div class="filter-group" data-views="influence careers"><span class="filter-label">Relationship types</span><div class="chip-list" id="typeFilters"></div></div>
+          <div class="filter-group" data-views="careers"><span class="filter-label">Search</span><label class="check-row"><input type="checkbox" id="folkOnly" /> Oceanus Folk artists only</label></div>
+          <div class="filter-group" data-views="candidates"><span class="filter-label">Artist pool</span><div class="segmented" role="group" aria-label="Artist pool"><button class="segment active" data-pool="all">All</button><button class="segment" data-pool="rising" title="First release in 2030 or later">Rising</button><button class="segment" data-pool="established" title="First release before 2030">Established</button></div></div>
+          <div class="filter-group" data-views="candidates"><label class="filter-label" for="poolSort">Sort search by</label><select id="poolSort"><option value="notoriety">Notoriety</option><option value="newest">Newest debut</option></select></div>
+          <button class="clear-button" id="clearFilters">Clear filters</button>
+        </div>
         <div class="compare-slots" id="compareSlots" data-views="candidates" aria-label="Artists to compare"></div>
-        <div class="chart-shell"><div class="axis-title" id="axisTitle"></div><div id="viz" class="viz" aria-live="polite"></div></div>
-        <div class="legend" id="legend"></div>
+        <div class="chart-shell"><div class="axis-title" id="axisTitle"></div><div id="viz" class="viz" aria-live="polite"></div><div class="legend" id="legend"></div></div>
         <div class="chart-hint" id="chartHint"></div>
       </main>
 
       <aside class="inspector" aria-label="Selection details">
-        <div class="inspector-header"><span class="kicker">INSPECTOR</span><span class="inspector-state" id="inspectorState">IDLE</span></div>
+        <div class="inspector-header"><h2 id="inspectorTitle">Details</h2><span class="inspector-state" id="inspectorState">IDLE</span></div>
         <div id="inspectorContent" class="inspector-content"><div class="empty-inspector"><span class="empty-mark">+</span><h2>Select a mark</h2><p>Select a year, line, or candidate to view details.</p></div></div>
-        
       </aside>
     </div>
   </div>
-  <button id="feedbackLauncher" class="feedback-launcher" hidden aria-label="Open design feedback">✦</button>
-  <div id="feedbackPins" class="feedback-pins" aria-hidden="true"></div>
-  <aside id="feedbackOverlay" class="feedback-overlay" hidden aria-label="Design feedback panel">
-    <div class="feedback-overlay-head"><div><span class="kicker">DEV MODE</span><h2>Page feedback</h2></div><button id="closeFeedback" class="feedback-close" aria-label="Close feedback">×</button></div>
-    <p class="feedback-help">Pin a spot on this page, then leave a note.</p>
-    <button id="addFeedback" class="feedback-add">＋ Add pin</button>
-    <div id="feedbackEditor" class="feedback-editor" hidden><span id="feedbackPinLabel" class="feedback-pin-label">Pin 1</span><input id="feedbackTitle" placeholder="Short label" /><textarea id="feedbackNote" placeholder="What should change here?"></textarea><div class="feedback-editor-actions"><button id="deleteFeedback" class="feedback-delete">Delete</button><button id="doneFeedback" class="feedback-done">Done</button></div></div>
-    <div id="feedbackList" class="feedback-list"><p class="feedback-empty">No pins on this view.</p></div>
-    <button id="saveFeedback" class="feedback-save">Save all views as Markdown</button>
-  </aside>
-  <div class="feedback-capture" id="feedbackCapture" hidden>Click anywhere on the page to place a pin. Press Escape to cancel.</div>
   <div class="tooltip" id="tooltip" role="status"></div>
   <script is:inline src={`${import.meta.env.BASE_URL}/graph-data.js`}></script>
   <script is:inline src={`${import.meta.env.BASE_URL}/app.js`}></script>
+  <MesurerOverlay client:only="react" />
 </body>
 </html>
